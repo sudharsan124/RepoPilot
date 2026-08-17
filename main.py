@@ -1,8 +1,9 @@
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+import os
 import subprocess
 import time
-import os
+
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 
 class RepoPilotHandler(FileSystemEventHandler):
@@ -21,15 +22,43 @@ class RepoPilotHandler(FileSystemEventHandler):
         print(f"Change detected: {path}")
 
         try:
-            subprocess.run(["git", "add", "."], check=True)
+            # Get the GitHub remote repository
+            remote = subprocess.run(
+                ["git", "remote", "get-url", "origin"],
+                capture_output=True,
+                text=True,
+                check=False
+            )
 
+            # Stop if no remote repository is configured
+            if remote.returncode != 0:
+                print("No GitHub remote found. Push cancelled.")
+                return
+
+            remote_url = remote.stdout.strip()
+
+            # Safety check: never automatically push to RepoPilot itself
+            if "sudharsan124/RepoPilot" in remote_url:
+                print("Safety check: RepoPilot repository detected.")
+                print("Automatic push cancelled.")
+                return
+
+            # Stage changed files
+            subprocess.run(
+                ["git", "add", "."],
+                check=True
+            )
+
+            # Check whether there are staged changes
             result = subprocess.run(
-                ["git", "diff", "--cached", "--quiet"]
+                ["git", "diff", "--cached", "--quiet"],
+                check=False
             )
 
             if result.returncode == 0:
                 return
 
+            # Create commit
             subprocess.run(
                 [
                     "git",
@@ -40,6 +69,7 @@ class RepoPilotHandler(FileSystemEventHandler):
                 check=True
             )
 
+            # Push changes
             subprocess.run(
                 ["git", "push", "origin", "main"],
                 check=True
