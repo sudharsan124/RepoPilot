@@ -1,0 +1,1 @@
+print("Automatic GitHub test")
