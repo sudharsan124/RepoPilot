@@ -2,27 +2,44 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import subprocess
 import time
+import os
 
 
 class RepoPilotHandler(FileSystemEventHandler):
 
-    def on_created(self, event):
-        if event.is_directory:
+    def should_ignore(self, path):
+        path = os.path.abspath(path)
+        git_folder = os.path.abspath(".git")
+
+        return path.startswith(git_folder)
+
+    def process_change(self, path):
+
+        if self.should_ignore(path):
             return
 
-        print(f"New file detected: {event.src_path}")
+        print(f"Change detected: {path}")
 
         try:
-            # Add the new file
             subprocess.run(["git", "add", "."], check=True)
 
-            # Commit
+            result = subprocess.run(
+                ["git", "diff", "--cached", "--quiet"]
+            )
+
+            if result.returncode == 0:
+                return
+
             subprocess.run(
-                ["git", "commit", "-m", f"RepoPilot: Added {event.src_path}"],
+                [
+                    "git",
+                    "commit",
+                    "-m",
+                    f"RepoPilot: Updated {os.path.basename(path)}"
+                ],
                 check=True
             )
 
-            # Push to GitHub
             subprocess.run(
                 ["git", "push", "origin", "main"],
                 check=True
@@ -33,13 +50,24 @@ class RepoPilotHandler(FileSystemEventHandler):
         except subprocess.CalledProcessError as error:
             print(f"Git operation failed: {error}")
 
+    def on_created(self, event):
+        if not event.is_directory:
+            self.process_change(event.src_path)
+
+    def on_modified(self, event):
+        if not event.is_directory:
+            self.process_change(event.src_path)
+
 
 observer = Observer()
 
-path = "."
-
 event_handler = RepoPilotHandler()
-observer.schedule(event_handler, path, recursive=True)
+
+observer.schedule(
+    event_handler,
+    ".",
+    recursive=True
+)
 
 observer.start()
 
