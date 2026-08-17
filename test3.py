@@ -1,1 +1,0 @@
-print("RepoPilot automatic push test")

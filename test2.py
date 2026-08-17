@@ -1,1 +1,0 @@
-print("Automatic GitHub test")
