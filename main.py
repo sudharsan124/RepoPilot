@@ -6,12 +6,10 @@ from urllib.parse import urlparse
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-
 PROTECTED_REPOSITORY = "sudharsan124/RepoPilot"
 
 
 class RepoPilotHandler(FileSystemEventHandler):
-
     def __init__(self, repo_root):
         self.repo_root = repo_root
 
@@ -33,13 +31,11 @@ class RepoPilotHandler(FileSystemEventHandler):
         else:
             return False
 
-        if repository.endswith(".git"):
-            repository = repository[:-4]
+        repository = repository.removesuffix(".git")
 
         return repository.lower() == PROTECTED_REPOSITORY.lower()
 
     def process_change(self, path):
-
         if self.should_ignore(path):
             return
 
@@ -51,7 +47,7 @@ class RepoPilotHandler(FileSystemEventHandler):
                 cwd=self.repo_root,
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
             )
 
             if remote.returncode != 0:
@@ -70,13 +66,13 @@ class RepoPilotHandler(FileSystemEventHandler):
             subprocess.run(
                 ["git", "add", "."],
                 cwd=self.repo_root,
-                check=True
+                check=True,
             )
 
             result = subprocess.run(
                 ["git", "diff", "--cached", "--quiet"],
                 cwd=self.repo_root,
-                check=False
+                check=False,
             )
 
             if result.returncode == 0:
@@ -89,16 +85,16 @@ class RepoPilotHandler(FileSystemEventHandler):
                     "git",
                     "commit",
                     "-m",
-                    f"RepoPilot: Updated {filename}"
+                    f"RepoPilot: Updated {filename}",
                 ],
                 cwd=self.repo_root,
-                check=True
+                check=True,
             )
 
             subprocess.run(
                 ["git", "push", "origin", "main"],
                 cwd=self.repo_root,
-                check=True
+                check=True,
             )
 
             print("Successfully pushed to GitHub!")
@@ -120,7 +116,7 @@ def get_repository_root():
         ["git", "rev-parse", "--show-toplevel"],
         capture_output=True,
         text=True,
-        check=False
+        check=False,
     )
 
     if result.returncode != 0:
@@ -138,13 +134,12 @@ if repo_root is None:
 print(f"Repository detected: {repo_root}")
 
 observer = Observer()
-
 event_handler = RepoPilotHandler(repo_root)
 
 observer.schedule(
     event_handler,
     repo_root,
-    recursive=True
+    recursive=True,
 )
 
 observer.start()
