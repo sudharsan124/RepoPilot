@@ -1,3 +1,12 @@
+<p align="center">
+  <img src="logo.png" alt="RepoPilot Logo" width="180">
+</p>
+
+<h1 align="center">RepoPilot</h1>
+
+<p align="center">
+  Python-powered Git automation for automatic commit and push workflows.
+</p>
 # 🚀 RepoPilot
 
 **RepoPilot is a Python-based Git automation tool that watches a project folder for file changes and helps automate Git commits and pushes to GitHub.**
